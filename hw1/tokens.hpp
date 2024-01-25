@@ -2,6 +2,9 @@
 #define TOKENS_HPP_
   enum tokentype
   {
+    UNCLOSED_STRING = -1,
+    // UNDEFINED_ESCAPE_SEQUENCE = -2,
+    UNDEFINED_CHAR = -3,
     VOID = 1,
     INT = 2,
     BYTE = 3,
