@@ -32,10 +32,43 @@
     STRING = 28,
     UNCLOSED_STRING = 29,
     UNDEFINED_CHAR = 30,
-    UNDEFINED_ESCAPE_SEQUENCE = 31
   };
+
+  static const char *TOKENS[] = {
+    "VOID",
+    "INT",
+    "BYTE",
+    "B",
+    "BOOL",
+    "AND",
+    "OR",
+    "NOT",
+    "TRUE",
+    "FALSE",
+    "RETURN",
+    "IF",
+    "ELSE",
+    "WHILE",
+    "BREAK",
+    "CONTINUE",
+    "SC",
+    "LPAREN",
+    "RPAREN",
+    "LBRACE",
+    "RBRACE",
+    "ASSIGN",
+    "RELOP",
+    "BINOP",
+    "COMMENT",
+    "ID",
+    "NUM",
+    "STRING",
+    "UNCLOSED_STRING",
+    "UNDEFINED_CHAR",
+};  
+
   extern int yylineno;
   extern char* yytext;
-  extern size_t yyleng;
+  extern int yyleng;
   extern int yylex();
 #endif /* TOKENS_HPP_ */

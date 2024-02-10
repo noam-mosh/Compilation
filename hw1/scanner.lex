@@ -14,11 +14,11 @@ letter  		        ([a-zA-Z])
 LF                      \n
 CR                      \r
 HT                      \t
-whitespace		        ([ {HT}{CR}{LF}])
+whitespace		        ([ \t\n\r])
 quotation               (\")
 hexchar                 ([0-9a-fA-F])
-escape                  ({quotation}|{LF}|{CR}|{HT}|\0|\x{hexchar}{2})
-printable               ([^\{quotation}{LF}{CR}])
+string                  ([\x00-\x09\x0b-\x0c\x0e-\x21\x23-\x5b\x5d-\x7f])
+escape                  (\\n|\\r|\\t|\\0|\\x{hexchar}{2}|\\.)
 
 
 
@@ -49,14 +49,13 @@ continue                                                                        
 =                                                                               return ASSIGN;
 ([=!<>]=)|([<>])                                                                return RELOP;
 [\+\-\*\/]                                                                      return BINOP;
-(\/\/)[^{LF}{CR}]*                                                              return COMMENT;
+(\/\/)[^\n\r]*                                                                  return COMMENT;
 {letter}({letter}|{digit})*                                                     return ID;
 ([1-9]({digit})*)|0                                                             return NUM;
 {whitespace}				                                                    ;
 {quotation}                                                                     BEGIN(STRING_STATE);
-<STRING_STATE>({printable}|\\({escape}))*{quotation}                            BEGIN(INITIAL);
-                                                                                return STRING;
-<STRING_STATE>\\([^{escape}])*{quotation}                                       return UNDEFINED_ESCAPE_SEQUENCE;
-<STRING_STATE>([^{quotation}]*)                                                 return UNCLOSED_STRING;
+<STRING_STATE>({string}|{escape})*{quotation}                                   BEGIN(INITIAL); return STRING;
+<STRING_STATE>.|[\r\n]                                                          return UNCLOSED_STRING;
+<STRING_STATE><<EOF>>                                                           return UNCLOSED_STRING;
 .                                                                               return UNDEFINED_CHAR;
 %%
