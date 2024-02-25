@@ -1,0 +1,10 @@
+hw2/lex.yy.c
+hw2/hw2
+hw2/Makefile
+hw3/hw3-tests.zip
+hw3/Makefile-hw3
+hw3/lex.yy.c
+hw3/selfcheck-hw3
+hw3/.vscode/launch.json
+hw2/parser.tab.cpp
+hw2/parser.tab.hpp

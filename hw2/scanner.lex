@@ -1,7 +1,8 @@
 %{
-/* Declarations section */
+    /* Declarations section */
 #include <stdio.h>
-#include "tokens.hpp"
+#include "output.hpp"
+#include "parser.tab.hpp"
 %}
 
 /* Flex config */
@@ -15,17 +16,14 @@ LF                      \n
 CR                      \r
 HT                      \t
 whitespace		        ([ \t\n\r])
-quotation               (\")
-hexchar                 ([0-9a-fA-F])
-string                  ([\x00-\x09\x0b-\x0c\x0e-\x21\x23-\x5b\x5d-\x7f])
-escape                  (\\n|\\r|\\t|\\0|\\x{hexchar}{2}|\\.)
+string                  \"([^\n\r\"\\]|\\[rnt"\\])+\"
+ignore              \/\/[^\r\n]*[\r|\n|\r\n]?
 
 
 
 %x STRING_STATE
 %%
 
-void                                                                            return VOID;
 int                                                                             return INT;
 byte                                                                            return BYTE;
 b                                                                               return B;
@@ -47,17 +45,15 @@ continue                                                                        
 \{                                                                              return LBRACE;
 \}                                                                              return RBRACE;
 =                                                                               return ASSIGN;
+(<=|>=|<|>)                                                                     return RELATIONAL_OP;
 (==|!=)                                                                         return EQUALITY_OP;
-(<=|>=|<|>)                                                                     return INEQUALITY_LOP;
-[\+\-]                                                                          return ADDITIVE_BINOP;
 [\*\/]                                                                          return MULTIPLICATIVE_BINOP;
-(\/\/)[^\n\r]*(\r|\n|\r\n)?                                                     return COMMENT;
+[\+\-]                                                                          return ADDITIVE_BINOP;
 {letter}({letter}|{digit})*                                                     return ID;
 ([1-9]({digit})*)|0                                                             return NUM;
 {whitespace}				                                                    ;
-{quotation}                                                                     BEGIN(STRING_STATE);
-<STRING_STATE>({string}|{escape})*{quotation}                                   BEGIN(INITIAL); return STRING;
-<STRING_STATE>.|[\r\n]                                                          return UNCLOSED_STRING;
-<STRING_STATE><<EOF>>                                                           return UNCLOSED_STRING;
-.                                                                               return UNDEFINED_CHAR;
+{ignore}                                                                        ;
+{string}                                                                        return STRING;
+.                                                                               {output::errorLex(yylineno); exit(0);}
 %%
+  

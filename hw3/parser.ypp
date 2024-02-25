@@ -1,0 +1,104 @@
+%{
+/* Declarations section */
+#include <iostream>
+#include <stdlib.h>
+#include "hw3_output.hpp"
+#include "types.hpp"
+#include "sym_table.hpp"
+using namespace output;
+void yyerror(const char*);
+int yylex();
+extern int yylineno;
+
+static Symtab symtab = Symtab();
+%}
+
+%nonassoc VOID INT BYTE B BOOL
+%right ASSIGN
+%left OR
+%left AND
+%nonassoc TRUE
+%nonassoc FALSE
+%nonassoc RETURN
+%right IF
+%right WHILE
+%nonassoc BREAK
+%nonassoc CONTINUE
+%left SC
+%right COMMA
+%nonassoc ID NUM STRING
+%nonassoc OVERRIDE
+%left EQUALITY_OP
+%left RELATIONAL_OP
+%left ADDITIVE_BINOP
+%left MULTIPLICATIVE_BINOP
+%right NOT
+%right LPAREN
+%left RPAREN
+%right LBRACE
+%left RBRACE
+%nonassoc ELSE
+
+%%
+Program : Statements                                                            {symtab.remove_scope();}                               
+Statements : Statement                                                          {$$ = new Attr();}                                                          
+            | Statements Statement                                              {$$ = new Attr();}                        
+
+Statement : LBRACE Scope_Open Statements RBRACE Scope_Close                                             
+            | Type ID SC                                                        {symtab.push(((Name_attr*)$2)->name, ((Type_attr*)$1)->type, false);}
+            | Type ID ASSIGN Exp SC                                             {symtab.assert_legal_assignment(((Type_attr*)$1)->type, ((Type_attr*)$4)->type);
+                                                                                symtab.push(((Name_attr*)$2)->name, ((Type_attr*)$1)->type, false);}
+            | ID ASSIGN Exp SC                                                  {Type type1 = symtab.get_var_type(((Name_attr*)$1)->name);
+                                                                                symtab.assert_defined(type1, ((Name_attr*)$1)->name);
+                                                                                symtab.assert_legal_assignment(type1, ((Type_attr*)$3)->type);}
+            | Call SC                                                           
+
+            | RETURN SC                                                         {symtab.assert_return_type(VOID_);}
+            
+            | RETURN Exp SC                                                     {symtab.assert_return_type(((Type_attr*)$2)->type);}
+            
+            | IF LPAREN IfExp RPAREN Scope_Open Statement Scope_Close
+            | IF LPAREN IfExp RPAREN Scope_Open Statement Scope_Close ELSE Scope_Open Statement Scope_Close
+            
+            | WHILE LPAREN Exp RPAREN {symtab.assert_bool(((Type_attr*)$3)->type); symtab.start_while_scope();} Statement {symtab.end_while_scope();}
+            | BREAK SC                                                          {symtab.assert_break_in_while();}
+            | CONTINUE SC                                                       {symtab.assert_cont_in_while();}
+
+IfExp : Exp                                                                     {symtab.assert_bool(((Type_attr*)$1)->type);}
+
+Call : ID LPAREN Exp RPAREN                                                     {$$ = new Type_attr(symtab.call_func(((Name_attr*)$1)->name, ((Type_attr*)$3)->type));}
+
+Type : INT                                                                      {$$ = new Type_attr(INT_);}
+            | BYTE                                                              {$$ = new Type_attr(BYTE_);}
+            | BOOL                                                              {$$ = new Type_attr(BOOL_);}
+
+Exp : LPAREN Exp RPAREN                                                         {$$ = new Type_attr(((Type_attr*)$2)->type);}
+            | Exp ADDITIVE_BINOP Exp                                            {$$ = new Type_attr(symtab.calc_binop_type(((Type_attr*)$1)->type, ((Type_attr*)$3)->type));}
+            | Exp MULTIPLICATIVE_BINOP Exp                                      {$$ = new Type_attr(symtab.calc_binop_type(((Type_attr*)$1)->type, ((Type_attr*)$3)->type));}
+            | ID                                                                {$$ = new Type_attr(symtab.get_var_type(((Name_attr*)$1)->name)); symtab.assert_defined(((Type_attr*)$$)->type, ((Name_attr*)$1)->name);}
+            | Call                                                              {$$ = new Type_attr(((Type_attr*)$1)->type);}
+            | NUM                                                               {$$ = new Type_attr(INT_);}
+            | NUM B                                                             {$$ = new Type_attr(BYTE_); symtab.assert_byte_range(((Number_attr*)$1)->num);}
+            | STRING                                                            {$$ = new Type_attr(STRING_);}
+            | TRUE                                                              {$$ = new Type_attr(BOOL_);}
+            | FALSE                                                             {$$ = new Type_attr(BOOL_);}
+            | NOT Exp                                                           {symtab.assert_bool(((Type_attr*)$2)->type); $$ = new Type_attr(BOOL_);}
+            | Exp AND Exp                                                       {symtab.assert_bool(((Type_attr*)$1)->type); symtab.assert_bool(((Type_attr*)$3)->type); $$ = new Type_attr(BOOL_);}
+            | Exp OR Exp                                                        {symtab.assert_bool(((Type_attr*)$1)->type); symtab.assert_bool(((Type_attr*)$3)->type); $$ = new Type_attr(BOOL_);}
+            | Exp RELATIONAL_OP Exp                                             {symtab.assert_numeric(((Type_attr*)$1)->type); symtab.assert_numeric(((Type_attr*)$3)->type); $$ = new Type_attr(BOOL_);}
+            | Exp EQUALITY_OP Exp                                               {symtab.assert_numeric(((Type_attr*)$1)->type); symtab.assert_numeric(((Type_attr*)$3)->type); $$ = new Type_attr(BOOL_);}
+            | LPAREN Type RPAREN Exp                                            {symtab.assert_numeric(((Type_attr*)$2)->type); symtab.assert_numeric(((Type_attr*)$4)->type); $$ = new Type_attr(((Type_attr*)$2)->type);} 
+
+Scope_Open : {symtab.create_scope();}
+
+Scope_Close : {symtab.remove_scope();}
+%%
+
+void yyerror(const char*){
+    errorSyn(yylineno);
+    exit(0);
+}
+
+int main(){
+    return yyparse();
+}

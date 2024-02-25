@@ -19,41 +19,41 @@ int yyerror(const char * message);
 %nonassoc TRUE;
 %nonassoc FALSE;
 %nonassoc RETURN;
-%nonassoc IF;
-%nonassoc ELSE;
-%nonassoc WHILE;
+%right IF;
+%right WHILE;
 %nonassoc BREAK;
 %nonassoc CONTINUE;
-%nonassoc SC;
+%left SC;
 %nonassoc ID;
 %nonassoc NUM;
 %nonassoc STRING;
 %right ASSIGN;
-%nonassoc OR;
-%nonassoc AND;
+%left OR;
+%left AND;
 %left EQUALITY_OP;
 %left RELATIONAL_OP;
 %left ADDITIVE_BINOP;
 %left MULTIPLICATIVE_BINOP;
 %right NOT;
 %left RPAREN;
-%left LPAREN;
+%right LPAREN;
 %left RBRACE;
-%left LBRACE;
+%right LBRACE;
+%nonassoc ELSE;
 
 %%
 
 /* Rules section */
-Statements:     Statement                                            {printProductionRule(2);}
 Program:        Statements                                           {printProductionRule(1);};
+Statements:     Statement                                            {printProductionRule(2);}
           |     Statements Statement                                 {printProductionRule(3);};
-Statement:      LBRACE Statement RBRACE                              {printProductionRule(4);}
+Statement:      LBRACE Statements RBRACE                             {printProductionRule(4);}
           |     Type ID SC                                           {printProductionRule(5);}
           |     Type ID ASSIGN Exp SC                                {printProductionRule(6);}
           |     ID ASSIGN Exp SC                                     {printProductionRule(7);}
           |     Call SC                                              {printProductionRule(8);}
           |     RETURN SC                                            {printProductionRule(9);}
-          |     IF LPAREN Exp RPAREN Statement %prec IF              {printProductionRule(10);}
+          |     IF LPAREN Exp RPAREN Statement                       {printProductionRule(10);}
           |     IF LPAREN Exp RPAREN Statement ELSE Statement        {printProductionRule(11);}
           |     WHILE LPAREN Exp RPAREN Statement                    {printProductionRule(12);}
           |     BREAK SC                                             {printProductionRule(13);}
